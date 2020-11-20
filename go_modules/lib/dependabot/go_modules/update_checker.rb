@@ -14,7 +14,7 @@ module Dependabot
         # Package url/proxy doesn't include any redirect meta tags
         /no go-import meta tags/,
         # Package url 404s
-        /404 Not Found/,
+        /404 Not Found/i,
         # Package server requested authentication
         /fatal: could not read Username/
       ].freeze
