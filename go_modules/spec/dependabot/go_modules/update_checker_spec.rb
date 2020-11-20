@@ -157,6 +157,31 @@ RSpec.describe Dependabot::GoModules::UpdateChecker do
       end
     end
 
+    context "when the package url is not found on github" do
+      let(:dependency_files) { [go_mod] }
+      let(:project_name) { "missing_github_package" }
+      let(:repo_contents_path) { build_tmp_repo(project_name) }
+
+      let(:dependency_name) { "github.com/dependabot-fixtures/private-package" }
+      let(:dependency_version) { "1.7.0" }
+
+      let(:go_mod) do
+        Dependabot::DependencyFile.new(name: "go.mod", content: go_mod_body)
+      end
+      let(:go_mod_body) { fixture("projects", project_name, "go.mod") }
+
+      it "raises a GitDependenciesNotReachable error" do
+        error_class = Dependabot::GitDependenciesNotReachable
+        expect { latest_resolvable_version }.
+          to raise_error(error_class) do |error|
+          expect(error.message).to include("github.com/dependabot-fixtures/private-package")
+          expect(error.dependency_urls).to contain_exactly("github.com/dependabot-fixtures/private-package")
+          # helper fails fast, so while there are multiple missing dependencies only one is raised
+          expect(error.message).not_to include("github.com/dependabot-fixtures/another-private-package")
+        end
+      end
+    end
+
     context "when the package url doesn't include any valid meta tags" do
       let(:dependency_files) { [go_mod] }
       let(:project_name) { "missing_meta_tag" }

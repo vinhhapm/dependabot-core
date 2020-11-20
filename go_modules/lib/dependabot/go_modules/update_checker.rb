@@ -14,7 +14,9 @@ module Dependabot
         # Package url/proxy doesn't include any redirect meta tags
         /no go-import meta tags/,
         # Package url 404s
-        /404 Not Found/
+        /404 Not Found/,
+        # Package server requested authentication
+        /fatal: could not read Username/
       ].freeze
 
       def latest_resolvable_version
@@ -86,6 +88,11 @@ module Dependabot
 
       def handle_subprocess_error(error)
         if RESOLVABILITY_ERROR_REGEXES.any? { |rgx| error.message =~ rgx }
+          if error.message.start_with?("module github.com/")
+            raise Dependabot::GitDependenciesNotReachable, [
+              error.message.scan(%r{github.com/[^:]*}).last
+            ]
+          end
           raise Dependabot::DependencyFileNotResolvable, error.message
         end
 
